@@ -83,4 +83,4 @@ docker build --platform linux/amd64 -t general-container .
 - `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
 
-The Docker Hub target is `<DOCKERHUB_USERNAME>/general-container`; the GHCR target is `ghcr.io/debeltoni/general-container`.
+The Docker Hub target is `bonanc/jax-torch-tailscale-s3`; the GHCR target is `ghcr.io/debeltoni/general-container`.

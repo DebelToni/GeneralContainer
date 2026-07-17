@@ -53,57 +53,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Ensure Docker Hub repository exists
-        shell: bash
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          access_token="$(
-            jq -n \
-              --arg identifier "$DOCKERHUB_USERNAME" \
-              --arg secret "$DOCKERHUB_TOKEN" \
-              '{identifier: $identifier, secret: $secret}' \
-            | curl --fail-with-body --silent --show-error \
-                --request POST \
-                --header 'Content-Type: application/json' \
-                --data-binary @- \
-                https://hub.docker.com/v2/auth/token \
-            | jq -er '.access_token'
-          )"
-
-          repository_url="https://hub.docker.com/v2/namespaces/${DOCKERHUB_USERNAME}/repositories/general-container"
-          status="$(curl --silent --show-error --output /tmp/dockerhub-repository.json \
-            --write-out '%{http_code}' \
-            --header "Authorization: Bearer ${access_token}" \
-            "$repository_url")"
-
-          if [[ "$status" == "404" ]]; then
-            create_status="$(
-              jq -n \
-                --arg name general-container \
-                --arg namespace "$DOCKERHUB_USERNAME" \
-                --arg description 'Universal CUDA 12.8 JAX and PyTorch development container' \
-                '{name: $name, namespace: $namespace, description: $description, registry: "docker.io", is_private: false}' \
-              | curl --silent --show-error --output /tmp/dockerhub-create.json \
-                  --write-out '%{http_code}' \
-                  --request POST \
-                  --header 'Content-Type: application/json' \
-                  --header "Authorization: Bearer ${access_token}" \
-                  --data-binary @- \
-                  "https://hub.docker.com/v2/namespaces/${DOCKERHUB_USERNAME}/repositories"
-            )"
-            if [[ "$create_status" != "201" ]]; then
-              cat /tmp/dockerhub-create.json >&2
-              exit 1
-            fi
-          elif [[ "$status" != "200" ]]; then
-            cat /tmp/dockerhub-repository.json >&2
-            exit 1
-          fi
-
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -127,5 +76,5 @@ jobs:
           tags: |
             ghcr.io/${{ env.GHCR_OWNER }}/general-container:latest
             ghcr.io/${{ env.GHCR_OWNER }}/general-container:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/general-container:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/general-container:${{ github.sha }}
+            bonanc/jax-torch-tailscale-s3:latest
+            bonanc/jax-torch-tailscale-s3:${{ github.sha }}
